@@ -11,6 +11,14 @@ public interface PersonaService {
 
     List<PersonaResponse> obtenerPorNombre(String nombre);
 
+    List<PersonaResponse> obtenerPorEmail(String email);
+
+    List<PersonaResponse> obtenerPorRangoEdad(Short edadMin, Short edadMax);
+
+    List<PersonaResponse> obtenerPorTelefono(String telefono);
+
+    List<PersonaResponse> obtenerPorGenero(Character genero);
+
     PersonaResponse obtenerPorId(Long id);
 
     PersonaResponse registrar(PersonaRequest request);

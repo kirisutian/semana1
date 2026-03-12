@@ -41,6 +41,36 @@ public class PersonaServiceImpl implements PersonaService {
     }
 
     @Override
+    public List<PersonaResponse> obtenerPorEmail(String email) {
+        log.info("Buscando personas que contengan el email: {}", email);
+        return personaRepository.findByEmailContaining(email.toLowerCase()).stream()
+                .map(personaMapper::entityToResponse).toList();
+    }
+
+    @Override
+    public List<PersonaResponse> obtenerPorRangoEdad(Short edadMin, Short edadMax) {
+        log.info("Buscando personas que estén en el rango de edad entre los {} y los {} años",
+                edadMin, edadMax);
+        return personaRepository.findByEdadBetween(edadMin, edadMax).stream()
+                .map(personaMapper::entityToResponse).toList();
+    }
+
+    @Override
+    public List<PersonaResponse> obtenerPorTelefono(String telefono) {
+        log.info("Buscando personas que tengan el teléfono: {}", telefono);
+        return personaRepository.findByTelefono(telefono).stream()
+                .map(personaMapper::entityToResponse).toList();
+    }
+
+    @Override
+    public List<PersonaResponse> obtenerPorGenero(Character genero) {
+        Genero generoEnum = Genero.obtenerPorAbreviacion(genero);
+        log.info("Buscando personas que pertenezcan al género: {}", generoEnum.getDescripcion());
+        return personaRepository.findByGenero(generoEnum).stream()
+                .map(personaMapper::entityToResponse).toList();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PersonaResponse obtenerPorId(Long id) {
         return personaMapper.entityToResponse(obtenerPersonaOException(id));
@@ -51,6 +81,8 @@ public class PersonaServiceImpl implements PersonaService {
         log.info("Registrando nueva Persona: {}", request.nombre());
 
         Genero genero = Genero.obtenerPorAbreviacion(request.genero());
+
+        validarTelefonoUnico(request.telefono());
 
         String email = generarEmail(
                 request.nombre(),
@@ -68,6 +100,8 @@ public class PersonaServiceImpl implements PersonaService {
         Persona persona = obtenerPersonaOException(id);
 
         log.info("Actualizando Persona con id: {}", id);
+
+        validarTelefonoUnicoActualizado(request.telefono(), id);
 
         persona.setNombre(request.nombre());
         persona.setApellidoPaterno(request.apellidoPaterno());
@@ -114,5 +148,19 @@ public class PersonaServiceImpl implements PersonaService {
                         obtenerPrimerosCaracteres(apellidoPaterno, 5) +
                         obtenerPrimerosCaracteres(apellidoMaterno, 5) + "@ejemplo.com"
                 ).toLowerCase();
+    }
+
+    private void validarTelefonoUnico(String telefono) {
+        log.info("Validando teléfono único...");
+        if (personaRepository.existsByTelefono(telefono)) {
+            throw new IllegalArgumentException("Ya existe una persona registrada con el teléfono " + telefono);
+        }
+    }
+
+    private void validarTelefonoUnicoActualizado(String telefono, Long id) {
+        log.info("Validando teléfono único al actualizar...");
+        if (personaRepository.existsByTelefonoAndIdNot(telefono, id)) {
+            throw new IllegalArgumentException("Ya existe una persona registrada con el teléfono " + telefono);
+        }
     }
 }
